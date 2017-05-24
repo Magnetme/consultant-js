@@ -9,8 +9,8 @@ const loadConfig = async (consulHost, prefix, service) => {
 	const prefixUri = prefix ? `${prefix}/` : '';
 	const response = await promisify(cb => request({
 		uri : `${consulHost}/v1/kv/${prefixUri}${service.name}/?recurse=false`,
-		headers: {
-			'user-agent': properties.userAgent
+		headers : {
+			'user-agent' : properties.userAgent
 		},
 		json : true
 	}, cb));
@@ -42,11 +42,11 @@ const updateConfig = (properties, newConfig, callbacks) => {
 	deletes.forEach(key => delete properties[key]);
 
 	if (updates.length > 0 || deletes.length > 0) {
-		callbacks.forEach(callback => callback(properties))
+		callbacks.forEach(callback => callback(Object.assign({}, properties)));
 	}
 };
 
-export default async function ({consulHost, service, prefix, interval = 500}) {
+export default async function initializeConfiguration({consulHost, service, prefix, interval = 500}) {
 	const callbacks = new Set();
 
 	const host = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
@@ -58,15 +58,20 @@ export default async function ({consulHost, service, prefix, interval = 500}) {
 		instance : service.instance || process.env.SERVICE_INSTANCE
 	};
 
-	const initialProperties = await loadConfig(host, prefix, service);
+	const liveProperties = await loadConfig(host, prefix, service);
 
 	let timerId = 0;
 	if (interval > 0) {
-		timerId = setInterval(async () => await updateConfig(initialProperties, await loadConfig(host, prefix, service), callbacks), interval);
+		timerId = setInterval(async () => {
+			const newProperties = await loadConfig(host, prefix, service);
+			updateConfig(liveProperties, newProperties, callbacks)
+		}, interval);
 	}
 
 	return {
-		properties: initialProperties,
+		getProperties() {
+			return Object.assign({}, liveProperties);
+		},
 		register(callback) {
 			callbacks.add(callback);
 		},
