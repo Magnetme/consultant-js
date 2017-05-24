@@ -1,5 +1,5 @@
 {
-  "name": "consultant-js",
+  "name": "@magnet.me/consultant-js",
   "version": "1.0.0",
   "description": "A library to register services to Consul and listen for property changes.",
   "main": "index.js",
@@ -16,5 +16,16 @@
   "devDependencies": {
     "babel-preset-env": "^1.5.1",
     "express": "^4.15.3"
-  }
+  },
+  "directories": {
+    "example": "example"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Magnetme/consultant-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Magnetme/consultant-js/issues"
+  },
+  "homepage": "https://github.com/Magnetme/consultant-js#readme"
 }
