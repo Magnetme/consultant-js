@@ -1,8 +1,8 @@
 import request from 'request';
-import uuid from 'node-uuid';
 import promisify from './promisify';
 import ConsultantError from './consultant-error';
 import properties from './properties';
+import fetchIdentifier from './identifier';
 
 const deregister = async (host, instance) => {
 	const req = {
@@ -21,50 +21,30 @@ const deregister = async (host, instance) => {
 	}
 };
 
-export default async function register({service : {port, name, dataCenter, host, instance}, healthCheckPath, healthCheckInterval = 10, consulHost}) {
+export default async function register({service, healthCheckPath, healthCheckInterval = 10, consulHost}) {
 	consulHost = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
 
-	if (!port) {
-		throw new ConsultantError('port was not defined');
+	if (!Number(service.port)) {
+		throw new ConsultantError('service.port was not defined properly');
 	}
 
-	if (!name) {
+	if (!service.name) {
 		throw new ConsultantError('service.name was not defined');
 	}
 
-	let agent = null;
-	try {
-		const res = await promisify(cb => request({
-			uri : `${consulHost}/v1/agent/self`,
-			timeout : 5000,
-			headers : {
-				'user-agent' : properties.userAgent
-			}
-		}, cb));
-		agent = JSON.parse(res.body);
-	}
-	catch (e) {
-		throw new ConsultantError(`Could not retrieve agent from consul: ${e}`);
-	}
-
-	const identifier = {
-		name : name || process.env.SERVICE_NAME,
-		dataCenter : dataCenter || process.env.SERVICE_DC || agent.Config.Datacenter,
-		host : host || process.env.SERVICE_HOST || agent.Config.NodeName,
-		instance : instance || process.env.SERVICE_INSTANCE || uuid.v4()
-	};
+	const identifier = await fetchIdentifier(service, consulHost);
 
 	const body = {
 		Id : identifier.instance,
 		Name : identifier.name,
 		Address : identifier.host,
-		Port : port,
+		Port : service.port,
 	};
 
 	if (healthCheckPath && healthCheckInterval > 0) {
 		Object.assign(body, {
 			Check : {
-				HTTP : `http://${identifier.host}:${port}${healthCheckPath}`,
+				HTTP : `http://${identifier.host}:${service.port}${healthCheckPath}`,
 				Interval : healthCheckInterval
 			}
 		});

@@ -2,6 +2,7 @@ import request from 'request';
 import promisify from './promisify';
 import ConsultantError from './consultant-error';
 import properties from './properties';
+import fetchIdentifier from './identifier';
 import {parseKey, keyApplies} from './key-parser';
 import atob from 'atob';
 
@@ -49,21 +50,16 @@ const updateConfig = (properties, newConfig, callbacks) => {
 export default async function initializeConfiguration({consulHost, service, prefix, interval = 500}) {
 	const callbacks = new Set();
 
-	const host = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
+	consulHost = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
 
-	service = {
-		name : service.name || process.env.SERVICE_NAME,
-		dataCenter : service.dataCenter || process.env.SERVICE_DC,
-		host : service.host || process.env.SERVICE_HOST,
-		instance : service.instance || process.env.SERVICE_INSTANCE
-	};
+	const identifier = await fetchIdentifier(service, consulHost);
 
-	const liveProperties = await loadConfig(host, prefix, service);
+	const liveProperties = await loadConfig(consulHost, prefix, identifier);
 
 	let timerId = 0;
 	if (interval > 0) {
 		timerId = setInterval(async () => {
-			const newProperties = await loadConfig(host, prefix, service);
+			const newProperties = await loadConfig(consulHost, prefix, identifier);
 			updateConfig(liveProperties, newProperties, callbacks)
 		}, interval);
 	}
