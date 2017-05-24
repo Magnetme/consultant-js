@@ -24,8 +24,9 @@ const deregister = async (host, instance) => {
 export default async function register({service, healthCheckPath, healthCheckInterval = 10, consulHost}) {
 	consulHost = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
 
-	if (!Number(service.port)) {
-		throw new ConsultantError('service.port was not defined properly');
+	const portNumber = Number(service.port);
+	if (!(portNumber > 0 && portNumber < 65536)) {
+		throw new ConsultantError(`service.port=${service.port} is not a proper port`);
 	}
 
 	if (!service.name) {

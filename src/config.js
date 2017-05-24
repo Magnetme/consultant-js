@@ -66,7 +66,7 @@ export default async function initializeConfiguration({consulHost, service, pref
 
 	const liveProperties = await loadConfig(consulHost, prefix, identifier);
 
-	let timerId = 0;
+	let timerId;
 	if (interval > 0) {
 		timerId = setInterval(async () => {
 			const newProperties = await loadConfig(consulHost, prefix, identifier);
@@ -85,7 +85,9 @@ export default async function initializeConfiguration({consulHost, service, pref
 			callbacks.delete(callback);
 		},
 		stop() {
-			clearInterval(timerId);
+			if (timerId) {
+				clearInterval(timerId);
+			}
 		}
 	}
 }

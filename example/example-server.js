@@ -11,22 +11,31 @@ app.get('/_health', (req, res) => {
 	res.sendStatus(200);
 });
 
-const instance = {};
-
 const init = async (configuration) => {
 	const {identifier, deregister} = await service(configuration);
 
-	Object.assign(instance, {identifier, deregister});
+	const instance = Object.assign({}, {identifier, deregister});
 
-	const {
-		properties,
-		register : registerConfigCallback,
-		deregister : deregisterConfigCallback,
-		stop : stopConfigPolling
-	} = await config(Object.assign({}, configuration, {service : identifier}));
+	let getProperties;
+	let registerConfigCallback;
+	let deregisterConfigCallback;
+	let stopConfigPolling;
+
+	try {
+		const conf = await config(Object.assign({}, configuration, {service : identifier}));
+		getProperties = conf.getProperties;
+		registerConfigCallback = conf.register;
+		deregisterConfigCallback = conf.deregister;
+		stopConfigPolling = conf.stop;
+	}
+	catch (e) {
+		await stop(instance);
+
+		throw new Error(e);
+	}
 
 	Object.assign(instance, {
-		properties,
+		getProperties,
 		registerConfigCallback,
 		deregisterConfigCallback,
 		stopConfigPolling
@@ -35,7 +44,7 @@ const init = async (configuration) => {
 	return instance;
 };
 
-init({service : {name, port}, healthCheckPath : '/_health', prefix : 'config'}).then(() => {
+init({service : {name, port}, healthCheckPath : '/_health', prefix : 'config'}).then(instance => {
 
 	instance.registerConfigCallback((properties) => console.log(properties));
 
@@ -55,20 +64,20 @@ init({service : {name, port}, healthCheckPath : '/_health', prefix : 'config'}).
 
 		await stop();
 	});
+
+	process.on('SIGINT', async () => {
+		console.log('Caught interrupt signal. Stopping server.');
+
+		await stop(instance);
+
+		process.exit();
+	});
+
 }).catch(async (e) => {
 	console.error('Could not start server', e);
-	await stop();
 });
 
-process.on('SIGINT', async () => {
-	console.log('Caught interrupt signal. Stopping server.');
-
-	await stop();
-
-	process.exit();
-});
-
-async function stop() {
+async function stop(instance) {
 	try {
 		console.log('deregistering from Consul');
 		await instance.deregister();
@@ -76,8 +85,10 @@ async function stop() {
 		if (server) {
 			server.close();
 		}
-		console.log('stopping Consultant');
-		await instance.stopConfigPolling();
+		if (instance.stopConfigPolling) {
+			console.log('stopping Consultant');
+			await instance.stopConfigPolling();
+		}
 	}
 	catch (e) {
 		console.log('Failed to close the server properly', e);
