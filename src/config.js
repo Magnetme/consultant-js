@@ -23,16 +23,26 @@ const loadConfig = async (consulHost, prefix, service) => {
 	if (response.statusCode !== 200) {
 		throw new ConsultantError(`Error retrieving data from Consul: ${response.statusCode}: ${response.body}`);
 	}
-	return response.body
-		.map(kvPair => {
-			return {key : parseKey(kvPair.Key, prefix), value : kvPair.Value};
-		})
+	return parseBody(response.body, prefix, service);
+};
+
+/**
+ * Parses the fetched config from Consul and converts it to a proper object.
+ * @param body {Array} - The response body
+ * @param prefix {string} - The prefix to extract from the key path
+ * @param service {Object} - The service identifier to match key specifiers against
+ * @return {Object} A properties object containing all valid properties as specified in the body
+ */
+function parseBody(body, prefix, service) {
+	return body.map(kvPair => {
+		return {key : parseKey(kvPair.Key, prefix), value : kvPair.Value};
+	})
 		.filter(kvPair => kvPair.key.key && keyApplies(kvPair.key, service))
 		.map(kvPair => {
 			return {[kvPair.key.key] : atob(kvPair.value)};
 		})
 		.reduce((properties, kvPair) => Object.assign(properties, kvPair), {});
-};
+}
 
 const updateConfig = (properties, newConfig, callbacks) => {
 	const updates = Object.keys(newConfig).filter(key => properties[key] !== newConfig[key]);
