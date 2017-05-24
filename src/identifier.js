@@ -1,5 +1,5 @@
 import fetchAgent from './agent';
-import uuid from 'node-uuid';
+import uuid from 'uuid';
 
 export default async function loadIdentifier(identifier, consulHost) {
 	const agent = await fetchAgent(consulHost);
