@@ -2,13 +2,14 @@ import request from 'request';
 import uuid from 'node-uuid';
 import promisify from './promisify';
 import ConsultantError from './consultant-error';
+import properties from './properties';
 
 const deregister = async (host, instance) => {
 	const req = {
 		url : `${host}/v1/agent/service/deregister/${instance.instance}`,
 		method : 'DELETE',
 		headers : {
-			['user-agent'] : 'consultant-js'
+			'user-agent' : properties.userAgent
 		}
 	};
 
@@ -16,12 +17,12 @@ const deregister = async (host, instance) => {
 		await promisify(cb => request(req, cb));
 	}
 	catch (e) {
-		throw new ConsultantError('Could not deregister from Consul');
+		throw new ConsultantError(`Could not deregister from Consul: ${e}`);
 	}
 };
 
-export default async function register({service:{port, name, dataCenter, host, instance}, healthCheckPath, healthCheckInterval = 10, consulHost}) {
-	consulHost = consulHost || process.env.CONSUL_HOST || 'http://localhost:8500';
+export default async function register({service : {port, name, dataCenter, host, instance}, healthCheckPath, healthCheckInterval = 10, consulHost}) {
+	consulHost = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
 
 	if (!port) {
 		throw new ConsultantError('port was not defined');
@@ -33,11 +34,17 @@ export default async function register({service:{port, name, dataCenter, host, i
 
 	let agent = null;
 	try {
-		const res = await promisify(cb => request({uri : `${consulHost}/v1/agent/self`, timeout : 5000}, cb));
+		const res = await promisify(cb => request({
+			uri : `${consulHost}/v1/agent/self`,
+			timeout : 5000,
+			headers : {
+				'user-agent' : properties.userAgent
+			}
+		}, cb));
 		agent = JSON.parse(res.body);
 	}
 	catch (e) {
-		throw new ConsultantError('Could not retrieve agent from consul');
+		throw new ConsultantError(`Could not retrieve agent from consul: ${e}`);
 	}
 
 	const identifier = {
@@ -48,17 +55,17 @@ export default async function register({service:{port, name, dataCenter, host, i
 	};
 
 	const body = {
-		['Id'] : identifier.instance,
-		['Name'] : identifier.name,
-		['Address'] : identifier.host,
-		['Port'] : port,
+		Id : identifier.instance,
+		Name : identifier.name,
+		Address : identifier.host,
+		Port : port,
 	};
 
 	if (healthCheckPath && healthCheckInterval > 0) {
 		Object.assign(body, {
-			['Check'] : {
-				['HTTP'] : `http://${identifier.host}:${port}${healthCheckPath}`,
-				['Interval'] : healthCheckInterval
+			Check : {
+				HTTP : `http://${identifier.host}:${port}${healthCheckPath}`,
+				Interval : healthCheckInterval
 			}
 		});
 	}
@@ -67,7 +74,7 @@ export default async function register({service:{port, name, dataCenter, host, i
 		url : `${consulHost}/v1/agent/service/register`,
 		method : 'PUT',
 		headers : {
-			['user-agent'] : 'consultant-js'
+			'user-agent' : properties.userAgent
 		},
 		json : body
 	};
@@ -76,7 +83,7 @@ export default async function register({service:{port, name, dataCenter, host, i
 		await promisify(cb => request(req, cb));
 	}
 	catch (e) {
-		throw new ConsultantError('Could not register service with Consul');
+		throw new ConsultantError('Could not register service with Consul', e);
 	}
 
 	return {

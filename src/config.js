@@ -1,6 +1,7 @@
 import request from 'request';
 import promisify from './promisify';
 import ConsultantError from './consultant-error';
+import properties from './properties';
 import {parseKey, keyApplies} from './key-parser';
 import atob from 'atob';
 
@@ -8,6 +9,9 @@ const loadConfig = async (consulHost, prefix, service) => {
 	const prefixUri = prefix ? `${prefix}/` : '';
 	const response = await promisify(cb => request({
 		uri : `${consulHost}/v1/kv/${prefixUri}${service.name}/?recurse=false`,
+		headers: {
+			'user-agent': properties.userAgent
+		},
 		json : true
 	}, cb));
 
@@ -45,7 +49,7 @@ const updateConfig = (properties, newConfig, callbacks) => {
 export default async function ({consulHost, service, prefix, interval = 500}) {
 	const callbacks = new Set();
 
-	const host = consulHost || process.env.CONSUL_HOST || 'http://localhost:8500';
+	const host = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
 
 	service = {
 		name : service.name || process.env.SERVICE_NAME,
@@ -54,15 +58,15 @@ export default async function ({consulHost, service, prefix, interval = 500}) {
 		instance : service.instance || process.env.SERVICE_INSTANCE
 	};
 
-	const properties = await loadConfig(host, prefix, service);
+	const initialProperties = await loadConfig(host, prefix, service);
 
 	let timerId = 0;
 	if (interval > 0) {
-		timerId = setInterval(async () => await updateConfig(properties, await loadConfig(host, prefix, service), callbacks), interval);
+		timerId = setInterval(async () => await updateConfig(initialProperties, await loadConfig(host, prefix, service), callbacks), interval);
 	}
 
 	return {
-		properties,
+		properties: initialProperties,
 		register(callback) {
 			callbacks.add(callback);
 		},
