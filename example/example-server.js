@@ -1,5 +1,5 @@
 import express from 'express';
-import instance, {init} from '../index';
+import {service, config} from '../src/index';
 
 const name = 'test-server';
 const port = 10002;
@@ -11,7 +11,31 @@ app.get('/_health', (req, res) => {
 	res.sendStatus(200);
 });
 
-init({service : {name, port}, healthCheckPath : '/_health', prefix: 'config'}).then(() => {
+const instance = {};
+
+const init = async (configuration) => {
+	const {identifier, deregister} = await service(configuration);
+
+	Object.assign(instance, {identifier, deregister});
+
+	const {
+		properties,
+		register : registerConfigCallback,
+		deregister : deregisterConfigCallback,
+		stop : stopConfigPolling
+	} = await config(Object.assign({}, configuration, {service : identifier}));
+
+	Object.assign(instance, {
+		properties,
+		registerConfigCallback,
+		deregisterConfigCallback,
+		stopConfigPolling
+	});
+
+	return instance;
+};
+
+init({service : {name, port}, healthCheckPath : '/_health', prefix : 'config'}).then(() => {
 
 	instance.registerConfigCallback((properties) => console.log(properties));
 

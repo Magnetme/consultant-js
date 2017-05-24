@@ -1,33 +1,6 @@
 import service from './service';
 import config from './config';
 
-const instance = {};
-
-const init = async (configuration) => {
-	const {identifier, deregister} = await service(configuration);
-
-	Object.assign(instance, {identifier, deregister});
-
-	const {
-		properties,
-		register : registerConfigCallback,
-		deregister : deregisterConfigCallback,
-		stop : stopConfigPolling
-	} = await config(Object.assign({}, configuration, {service : identifier}));
-
-	Object.assign(instance, {
-		properties,
-		registerConfigCallback,
-		deregisterConfigCallback,
-		stopConfigPolling
-	});
-};
-
-/**
- * Globally shared instance for accessing config and service. Will not be initialized until a call to `init` is made.
- */
-export default instance;
-
 export {
 	/**
 	 * Registers a service with Consul
@@ -64,18 +37,5 @@ export {
 	 * @return {function} deregister - Remove a registered callback
 	 * @return {function} stop - Stop the store polling
 	 */
-	config,
-	/**
-	 * Initialization function that sets up the global Consultant instance
-	 * @function
-	 * @param {Object} configuration - The parameters of this object are the union of the @function service and @function config parameters
-	 * @return {Object}
-	 * @return {Object} identifier - The specified service identifier
-	 * @return {Object} properties - Object reflecting all the matching properties found by Consultant
-	 * @return {function} deregister - Function to deregister the service with its health check from Consul
-	 * @return {function} registerConfigCallback - Register a callback that receives the latest properties object any time a change is detected
-	 * @return {function} deregisterConfigCallback - Remove a registered callback
-	 * @return {function} stopConfigPolling - Stop the store polling
-	 */
-	init
+	config
 };
