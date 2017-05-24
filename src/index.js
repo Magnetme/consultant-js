@@ -15,7 +15,7 @@ export {
 	 * @param {string} [configuration.healthCheckPath] - An optional http path where the health check can be found
 	 * @param {Number} [configuration.healthCheckInterval] - The interval (in seconds) at which the health check is polled. If 0 no health check is done
 	 * @param {string} [configuration.consulHost] - Where Consultant can find a Consul agent
-	 * @return {Object} An object containing the identifier as well as a deregister function
+	 * @return {Promise} An Promise containing the identifier as well as a deregister function
 	 * @return {Object} identifier - The specified service identifier
 	 * @return {function} deregister - Function to deregister the service with its health check from Consul
 	 */
@@ -31,8 +31,8 @@ export {
 	 * @param {string} [configuration.service.instance] - The instance identifier of the service
 	 * @param {string} [configuration.prefix] - The prefix path that should be before the service name in the key/value store
 	 * @param {Number} [configuration.interval] - The interval (in milliseconds) at which to poll the store. If set to 0, no polling will be done
-	 * @return {Object}
-	 * @return {Object} properties - Object reflecting all the matching properties found by Consultant
+	 * @return {Promise} A promise containing the configuration Object
+	 * @return {function} getProperties - Getter to retrieve a copy of the current properties
 	 * @return {function} register - Register a callback that receives the latest properties object any time a change is detected
 	 * @return {function} deregister - Remove a registered callback
 	 * @return {function} stop - Stop the store polling

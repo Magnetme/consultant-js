@@ -1,5 +1,5 @@
 {
-  "name": "@magnet.me/consultant-js",
+  "name": "@magnet.me/consultant",
   "version": "1.0.0",
   "description": "A library to register services to Consul and listen for property changes.",
   "main": "src/index.js",
