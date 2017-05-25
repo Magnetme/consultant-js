@@ -1,10 +1,13 @@
 {
   "name": "@magnet.me/consultant",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A library to register services to Consul and listen for property changes.",
-  "main": "src/index.js",
+  "main": "out/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "eslint src",
+    "build": "npm run lint && babel src --out-dir out -s",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepublish": "npm run build"
   },
   "author": "Alex Kolpa",
   "license": "Apache-2.0",
@@ -15,6 +18,7 @@
   },
   "devDependencies": {
     "babel-preset-env": "^1.5.1",
+    "eslint": "^3.19.0",
     "express": "^4.15.3"
   },
   "directories": {

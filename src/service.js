@@ -71,4 +71,4 @@ export default async function register({service, healthCheckPath, healthCheckInt
 		identifier,
 		deregister : () => deregister(consulHost, identifier)
 	};
-};
+}

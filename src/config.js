@@ -70,7 +70,7 @@ export default async function initializeConfiguration({consulHost, service, pref
 	if (interval > 0) {
 		timerId = setInterval(async () => {
 			const newProperties = await loadConfig(consulHost, prefix, identifier);
-			updateConfig(liveProperties, newProperties, callbacks)
+			updateConfig(liveProperties, newProperties, callbacks);
 		}, interval);
 	}
 
@@ -89,5 +89,5 @@ export default async function initializeConfiguration({consulHost, service, pref
 				clearInterval(timerId);
 			}
 		}
-	}
+	};
 }

@@ -1,0 +1,8 @@
+.idea/
+.git/
+src/
+example/
+
+.babelrc
+.eslintrc.json
+.npmignore
