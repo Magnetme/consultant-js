@@ -73,6 +73,7 @@ export default async function initializeConfiguration({consulHost, service, pref
 				const newProperties = await loadConfig(consulHost, prefix, identifier);
 				updateConfig(liveProperties, newProperties, callbacks);
 			} catch(e) {
+				// eslint-disable-next-line no-console
 				console.warn('Could not fetch new properties from consul', e);
 			}
 		}, interval);
