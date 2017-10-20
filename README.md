@@ -3,6 +3,12 @@
 # Consultant
 ###### Fetches your service's configuration from Consul, and subscribes to any changes.
 
+## Install
+
+```js
+npm install @magnet.me/consultant
+```
+
 ## What's Consultant?
 Consultant is a Node library which allows your service to retrieve its configuration from Consul's Key/Value store as well as registering services. In addition to this, Consultant subscribes to any changes relevant to your service.
 
@@ -32,7 +38,7 @@ Or alternatively you can also define the this through an environment variable:
 ## Listening for config updates
 `config` returns a promise which when resolved contains an object that allows consumers to register to updates in their configuration. This approach allows consumers to directly fetch the configuration, or subscribe to any changes made. For example:
 ```javascript
-import {config} from 'consultant';
+import {config} from '@magnet.me/consultant';
 
 const {register, getProperties} = await config({service:{name:'test-server'}});
 
