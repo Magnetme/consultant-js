@@ -69,8 +69,12 @@ export default async function initializeConfiguration({consulHost, service, pref
 	let timerId;
 	if (interval > 0) {
 		timerId = setInterval(async () => {
-			const newProperties = await loadConfig(consulHost, prefix, identifier);
-			updateConfig(liveProperties, newProperties, callbacks);
+			try {
+				const newProperties = await loadConfig(consulHost, prefix, identifier);
+				updateConfig(liveProperties, newProperties, callbacks);
+			} catch(e) {
+				console.warn('Could not fetch new properties from consul', e);
+			}
 		}, interval);
 	}
 
