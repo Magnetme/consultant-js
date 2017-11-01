@@ -7,7 +7,7 @@ import fetchIdentifier from './identifier';
 const deregister = async (host, instance) => {
 	const req = {
 		url : `${host}/v1/agent/service/deregister/${instance.instance}`,
-		method : 'DELETE',
+		method : 'PUT',
 		headers : {
 			'user-agent' : properties.userAgent
 		}
