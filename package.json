@@ -1,6 +1,6 @@
 {
   "name": "@magnet.me/consultant",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A library to register services to Consul and listen for property changes.",
   "main": "out/index.js",
   "scripts": {
@@ -17,6 +17,7 @@
     "uuid": "^3.0.1"
   },
   "devDependencies": {
+    "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.5.1",
     "eslint": "^3.19.0",
     "express": "^4.15.3"

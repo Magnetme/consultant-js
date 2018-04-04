@@ -1,29 +1,71 @@
 import request from 'request';
 import promisify from './promisify';
-import ConsultantError from './consultant-error';
-import properties from './properties';
+import props from './properties';
 import fetchIdentifier from './identifier';
 import {parseKey, keyApplies} from './key-parser';
 import atob from 'atob';
 
-const loadConfig = async (consulHost, prefix, service) => {
-	const prefixUri = prefix ? `${prefix}/` : '';
-	const response = await promisify(cb => request({
-		uri : `${consulHost}/v1/kv/${prefixUri}${service.name}/?recurse=false`,
-		headers : {
-			'user-agent' : properties.userAgent
-		},
-		json : true
-	}, cb));
+const configUpdater = (consulHost, prefix, service, callback) => {
+	let consulIndex;
+	let timeoutId;
+	let shutdown = false;
+	let runningRequest;
+	const self = {
+		async poll() {
+			let timeout = 500;
+			try {
+				const prefixUri = prefix ? `${prefix}/` : '';
+				let uri = `${consulHost}/v1/kv/${prefixUri}${service.name}/?recurse=true`;
+				if (consulIndex) {
+					uri += `&index=${consulIndex}`;
+				}
+				const response = await promisify(cb => {
+					runningRequest = request({
+						uri,
+						headers : {
+							'user-agent' : props.userAgent
+						},
+						json : true
+					}, cb);
+				});
 
-	if (response.statusCode === 404) {
-		const prefixText = prefix ? ` with prefix '${prefix}'` : '';
-		throw new ConsultantError(`'${service.name}'${prefixText} cannot be found in Consul`);
-	}
-	if (response.statusCode !== 200) {
-		throw new ConsultantError(`Error retrieving data from Consul: ${response.statusCode}: ${response.body}`);
-	}
-	return parseBody(response.body, prefix, service);
+				consulIndex = response.headers['x-consul-index'];
+				if (response.statusCode === 404) {
+					timeout = 5000;
+					const prefixText = prefix ? ` with prefix '${prefix}'` : '';
+					// eslint-disable-next-line no-console
+					console.warn(`'${service.name}'${prefixText} cannot be found in Consul`);
+					return;
+				}
+				if (response.statusCode !== 200) {
+					timeout = 60000;
+					// eslint-disable-next-line no-console
+					console.warn(`Error retrieving data from Consul: ${response.statusCode}: ${response.body}`);
+					return;
+				}
+				const properties = parseBody(response.body, prefix, service);
+				if (callback) {
+					callback(properties);
+				}
+			}
+			finally {
+				if (!shutdown) {
+					timeoutId = setTimeout(self.poll, timeout);
+				}
+			}
+		},
+		stop() {
+			shutdown = true;
+			if (runningRequest) {
+				runningRequest.abort();
+			}
+			if (timeoutId) {
+				clearTimeout(timeoutId);
+			}
+		}
+	};
+
+	return self;
 };
 
 /**
@@ -57,27 +99,20 @@ const updateConfig = (properties, newConfig, callbacks) => {
 	}
 };
 
-export default async function initializeConfiguration({consulHost, service, prefix, interval = 500}) {
+export default async function initializeConfiguration({consulHost, service, prefix}) {
 	const callbacks = new Set();
 
-	consulHost = consulHost || process.env.CONSUL_HOST || properties.defaultHost;
+	consulHost = consulHost || process.env.CONSUL_HOST || props.defaultHost;
 
 	const identifier = await fetchIdentifier(service, consulHost);
 
-	const liveProperties = await loadConfig(consulHost, prefix, identifier);
+	let liveProperties = {};
 
-	let timerId;
-	if (interval > 0) {
-		timerId = setInterval(async () => {
-			try {
-				const newProperties = await loadConfig(consulHost, prefix, identifier);
-				updateConfig(liveProperties, newProperties, callbacks);
-			} catch(e) {
-				// eslint-disable-next-line no-console
-				console.warn('Could not fetch new properties from consul', e);
-			}
-		}, interval);
-	}
+	const updater = configUpdater(consulHost, prefix, identifier, (newProperties) => {
+		updateConfig(liveProperties, newProperties, callbacks);
+	});
+
+	await updater.poll();
 
 	return {
 		getProperties() {
@@ -90,9 +125,7 @@ export default async function initializeConfiguration({consulHost, service, pref
 			callbacks.delete(callback);
 		},
 		stop() {
-			if (timerId) {
-				clearInterval(timerId);
-			}
+			updater.stop();
 		}
 	};
 }
