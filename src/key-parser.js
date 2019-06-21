@@ -38,12 +38,12 @@ function parseKey(key, prefix) {
  */
 function extractSpecifiers(specifiersPart) {
 	return specifiersPart.split(',')
-			.map(specifier => specifier.split('='))
-			.filter(kvArray => validSpecifiers.hasOwnProperty(kvArray[0]))
-			.map(kvArray => {
-				const key = validSpecifiers[kvArray[0]];
-				return {[key] : kvArray[1]};
-			});
+		.map(specifier => specifier.split('='))
+		.filter(kvArray => validSpecifiers.hasOwnProperty(kvArray[0]))
+		.map(kvArray => {
+			const key = validSpecifiers[kvArray[0]];
+			return {[key] : kvArray[1]};
+		});
 }
 
 function keyApplies(key, service) {
