@@ -39,6 +39,8 @@ function parseKey(key, prefix) {
 function extractSpecifiers(specifiersPart) {
 	return specifiersPart.split(',')
 		.map(specifier => specifier.split('='))
+		// validSpecifiers is a hard-coded object so this check is safe
+		// eslint-disable-next-line no-prototype-builtins
 		.filter(kvArray => validSpecifiers.hasOwnProperty(kvArray[0]))
 		.map(kvArray => {
 			const key = validSpecifiers[kvArray[0]];
