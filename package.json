@@ -5,7 +5,7 @@
   "main": "out/index.js",
   "scripts": {
     "lint": "eslint src",
-    "build": "npm run lint && babel src --out-dir out -s",
+    "build": "npm run lint && babel src --out-dir out -s && cp src/index.d.ts out/index.d.ts",
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "npm run build"
   },
@@ -33,5 +33,6 @@
   "bugs": {
     "url": "https://github.com/Magnetme/consultant-js/issues"
   },
-  "homepage": "https://github.com/Magnetme/consultant-js#readme"
+  "homepage": "https://github.com/Magnetme/consultant-js#readme",
+  "types": "./out/index.d.ts"
 }
