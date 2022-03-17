@@ -1,5 +1,4 @@
-import request from 'request';
-import promisify from './promisify';
+import fetch from 'node-fetch';
 import ConsultantError from './consultant-error';
 import properties from './properties';
 import fetchIdentifier from './identifier';
@@ -14,7 +13,7 @@ const deregister = async (host, instance) => {
 	};
 
 	try {
-		await promisify(cb => request(req, cb));
+		await fetch(req);
 	}
 	catch (e) {
 		throw new ConsultantError(`Could not deregister from Consul: ${e}`);
@@ -51,17 +50,19 @@ export default async function register({service, healthCheckPath, healthCheckInt
 		});
 	}
 
-	const req = {
-		url : `${consulHost}/v1/agent/service/register`,
+	const url = `${consulHost}/v1/agent/service/register`;
+	const opts = {
 		method : 'PUT',
 		headers : {
+			'accept' : 'application/json',
+			'content-type' : 'application/json',
 			'user-agent' : properties.userAgent
 		},
-		json : body
+		body : JSON.stringify(body)
 	};
 
 	try {
-		await promisify(cb => request(req, cb));
+		await fetch(url, opts);
 	}
 	catch (e) {
 		throw new ConsultantError('Could not register service with Consul', e);

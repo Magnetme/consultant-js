@@ -1,5 +1,4 @@
-import request from 'request';
-import promisify from './promisify';
+import fetch from 'node-fetch';
 import props from './properties';
 import fetchIdentifier from './identifier';
 import {parseKey, keyApplies} from './key-parser';
@@ -9,7 +8,6 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 	let consulIndex;
 	let timeoutId;
 	let shutdown = false;
-	let runningRequest;
 	const self = {
 		async poll() {
 			let timeout = 500;
@@ -19,31 +17,30 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 				if (consulIndex) {
 					uri += `&index=${consulIndex}`;
 				}
-				const response = await promisify(cb => {
-					runningRequest = request({
-						uri,
-						headers : {
-							'user-agent' : props.userAgent
-						},
-						json : true
-					}, cb);
+				const response = await fetch(uri, {
+					headers : {
+						'accept' : 'application/json',
+						'content-type' : 'application/json',
+						'user-agent' : props.userAgent
+					},
 				});
 
 				consulIndex = response.headers['x-consul-index'];
-				if (response.statusCode === 404) {
+				if (response.status === 404) {
 					timeout = 5000;
 					const prefixText = prefix ? ` with prefix '${prefix}'` : '';
 					// eslint-disable-next-line no-console
 					console.warn(`'${service.name}'${prefixText} cannot be found in Consul`);
 					return;
 				}
-				if (response.statusCode !== 200) {
+				if (response.status !== 200) {
 					timeout = 60000;
 					// eslint-disable-next-line no-console
-					console.warn(`Error retrieving data from Consul: ${response.statusCode}: ${response.body}`);
+					console.warn(`Error retrieving data from Consul: ${response.status}: ${await response.text()}`);
 					return;
 				}
-				const properties = parseBody(response.body, prefix, service);
+				const json = await response.json();
+				const properties = parseBody(json, prefix, service);
 				if (callback) {
 					callback(properties);
 				}
@@ -56,9 +53,6 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 		},
 		stop() {
 			shutdown = true;
-			if (runningRequest) {
-				runningRequest.abort();
-			}
 			if (timeoutId) {
 				clearTimeout(timeoutId);
 			}
