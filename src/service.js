@@ -4,8 +4,8 @@ import properties from './properties';
 import fetchIdentifier from './identifier';
 
 const deregister = async (host, instance) => {
-	const req = {
-		url : `${host}/v1/agent/service/deregister/${instance.instance}`,
+	const uri = `${host}/v1/agent/service/deregister/${instance.instance}`;
+	const opts = {
 		method : 'PUT',
 		headers : {
 			'user-agent' : properties.userAgent
@@ -13,7 +13,7 @@ const deregister = async (host, instance) => {
 	};
 
 	try {
-		await fetch(req);
+		await fetch(uri, opts);
 	}
 	catch (e) {
 		throw new ConsultantError(`Could not deregister from Consul: ${e}`);
