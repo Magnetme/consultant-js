@@ -45,6 +45,11 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 					callback(properties);
 				}
 			}
+			catch (e) {
+				timeout = 5000;
+				// eslint-disable-next-line no-console
+				console.warn(`Error retrieving data from Consul: ${e}`);
+			}
 			finally {
 				if (!shutdown) {
 					timeoutId = setTimeout(self.poll, timeout);
