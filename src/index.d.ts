@@ -24,7 +24,7 @@ declare module "@magnet.me/consultant" {
 
 	interface ConfigArguments {
 		consulHost?: string;
-		service: Service;
+		service: ServiceIdentifier;
 		prefix?: string;
 	}
 
