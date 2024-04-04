@@ -1,3 +1,4 @@
+// TODO you will need to install express manually as it's not part of the dependencies as defined in package.json
 import express from 'express';
 import {service, config} from '../src/index';
 
