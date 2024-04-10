@@ -34,5 +34,8 @@
     "url": "https://github.com/Magnetme/consultant-js/issues"
   },
   "homepage": "https://github.com/Magnetme/consultant-js#readme",
-  "types": "./out/index.d.ts"
+  "types": "./out/index.d.ts",
+  "resolutions": {
+    "@babel/traverse": "7.23.2"
+  }
 }
