@@ -1,5 +1,6 @@
 import service from './service';
 import config from './config';
+import health from './health';
 
 export {
 	/**
@@ -37,5 +38,13 @@ export {
 	 * @return {function} deregister - Remove a registered callback
 	 * @return {function} stop - Stop the store polling
 	 */
-	config
+	config,
+	/**
+	 * Get the health information for a service
+	 * @function
+	 * @param {Object} configuration
+	 * @param {string} configuration.service The service name to search
+	 * @param {string} configuration.consulHost Where Consultant can find a Consul agent
+	 */
+	health
 };

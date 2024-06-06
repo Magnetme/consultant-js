@@ -1,6 +1,6 @@
 {
   "name": "@magnet.me/consultant",
-  "version": "1.4.1",
+  "version": "1.5.1",
   "description": "A library to register services to Consul and listen for property changes.",
   "main": "out/index.js",
   "scripts": {
