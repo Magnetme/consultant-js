@@ -30,8 +30,8 @@ declare module "@magnet.me/consultant" {
 
 	interface Config {
 		getProperties(): Properties;
-		register(callback: (Properties) => void): void;
-		deregister(callback: (Properties) => void): void;
+		register(callback: (properties: Properties) => void): void;
+		deregister(callback: (properties: Properties) => void): void;
 		stop(): void;
 	}
 
