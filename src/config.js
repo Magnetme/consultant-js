@@ -29,13 +29,11 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 				if (response.status === 404) {
 					timeout = 5000;
 					const prefixText = prefix ? ` with prefix '${prefix}'` : '';
-					// eslint-disable-next-line no-console
 					console.warn(`'${service.name}'${prefixText} cannot be found in Consul`);
 					return;
 				}
 				if (response.status !== 200) {
 					timeout = 60000;
-					// eslint-disable-next-line no-console
 					console.warn(`Error retrieving data from Consul: ${response.status}: ${await response.text()}`);
 					return;
 				}
@@ -47,7 +45,6 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 			}
 			catch (e) {
 				timeout = 5000;
-				// eslint-disable-next-line no-console
 				console.warn(`Error retrieving data from Consul: ${e}`);
 			}
 			finally {
