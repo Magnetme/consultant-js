@@ -45,7 +45,7 @@ export default async function register({service, healthCheckPath, healthCheckInt
 		Object.assign(body, {
 			Check : {
 				HTTP : `http://${identifier.host}:${service.port}${healthCheckPath}`,
-				Interval : healthCheckInterval
+				Interval : `${healthCheckInterval}s`
 			}
 		});
 	}
