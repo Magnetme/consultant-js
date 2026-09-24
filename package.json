@@ -4,10 +4,11 @@
   "description": "A library to register services to Consul and listen for property changes.",
   "main": "out/index.js",
   "scripts": {
-    "lint": "eslint src",
-    "build": "npm run lint && babel src --out-dir out -s && cp src/index.d.ts out/index.d.ts",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "npm run build"
+    "lint": "eslint src test",
+    "build": "babel src --out-dir out -s && cp src/index.d.ts out/index.d.ts",
+    "pretest": "npm run build",
+    "test": "node --test",
+    "prepublish": "npm run lint && npm run build"
   },
   "author": "Alex Kolpa",
   "license": "Apache-2.0",
