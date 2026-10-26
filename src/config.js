@@ -64,6 +64,19 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 	return self;
 };
 
+// Define data properties so a Consul key never invokes an inherited setter.
+function copyProperties(target, source) {
+	Object.keys(source).forEach(key => {
+		Object.defineProperty(target, key, {
+			value : source[key],
+			writable : true,
+			enumerable : true,
+			configurable : true
+		});
+	});
+	return target;
+}
+
 /**
  * Parses the fetched config from Consul and converts it to a proper object.
  * @param body {Array} - The response body
@@ -79,19 +92,19 @@ function parseBody(body, prefix, service) {
 		.map(kvPair => {
 			return {[kvPair.key.key] : atob(kvPair.value)};
 		})
-		.reduce((properties, kvPair) => Object.assign(properties, kvPair), {});
+		.reduce((properties, kvPair) => copyProperties(properties, kvPair), {});
 }
 
 const updateConfig = (properties, newConfig, callbacks) => {
 	const updates = Object.keys(newConfig).filter(key => properties[key] !== newConfig[key]);
 
-	Object.assign(properties, newConfig);
+	copyProperties(properties, newConfig);
 
-	const deletes = Object.keys(properties).filter(key => !newConfig[key]);
+	const deletes = Object.keys(properties).filter(key => !Object.prototype.hasOwnProperty.call(newConfig, key));
 	deletes.forEach(key => delete properties[key]);
 
 	if (updates.length > 0 || deletes.length > 0) {
-		callbacks.forEach(callback => callback(Object.assign({}, properties)));
+		callbacks.forEach(callback => callback(copyProperties({}, properties)));
 	}
 };
 
@@ -112,7 +125,7 @@ export default async function initializeConfiguration({consulHost, service, pref
 
 	return {
 		getProperties() {
-			return Object.assign({}, liveProperties);
+			return copyProperties({}, liveProperties);
 		},
 		register(callback) {
 			callbacks.add(callback);
