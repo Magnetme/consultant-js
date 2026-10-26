@@ -34,7 +34,7 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 				}
 				if (response.status !== 200) {
 					timeout = 60000;
-					console.warn(`Error retrieving data from Consul: ${response.status}: ${await response.text()}`);
+					console.warn(`Error retrieving data from Consul: HTTP ${response.status}`);
 					return;
 				}
 				const json = await response.json();
@@ -45,7 +45,8 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 			}
 			catch (e) {
 				timeout = 5000;
-				console.warn(`Error retrieving data from Consul: ${e}`);
+				const reason = e && e.type === 'invalid-json' ? 'invalid JSON' : 'request or configuration processing failed';
+				console.warn(`Error retrieving data from Consul: ${reason}`);
 			}
 			finally {
 				if (!shutdown) {
