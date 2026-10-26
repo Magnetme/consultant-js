@@ -13,6 +13,9 @@ export default async function fetchAgent(consulHost) {
 				'user-agent' : properties.userAgent
 			}
 		});
+		if (!res.ok) {
+			throw new ConsultantError(`Unexpected Consul agent response (status ${res.status})`);
+		}
 		return await res.json();
 	}
 	catch (e) {
