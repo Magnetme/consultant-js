@@ -2,9 +2,10 @@ import fetch from 'node-fetch';
 import ConsultantError from './consultant-error';
 import properties from './properties';
 import fetchIdentifier from './identifier';
+import encodePathSegment from './path-segment';
 
 const deregister = async (host, instance) => {
-	const uri = `${host}/v1/agent/service/deregister/${instance.instance}`;
+	const uri = `${host}/v1/agent/service/deregister/${encodePathSegment(instance.instance)}`;
 	const opts = {
 		method : 'PUT',
 		headers : {

@@ -3,8 +3,9 @@ import props from './properties';
 import fetchIdentifier from './identifier';
 import {parseKey, keyApplies} from './key-parser';
 import atob from 'atob';
+import encodePathSegment from './path-segment';
 
-const configUpdater = (consulHost, prefix, service, callback) => {
+const configUpdater = (consulHost, prefix, service, keyPath, callback) => {
 	let consulIndex;
 	let timeoutId;
 	let shutdown = false;
@@ -12,8 +13,7 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 		async poll() {
 			let timeout = 500;
 			try {
-				const prefixUri = prefix ? `${prefix}/` : '';
-				let uri = `${consulHost}/v1/kv/${prefixUri}${service.name}/?recurse=true`;
+				let uri = `${consulHost}/v1/kv/${keyPath}/?recurse=true`;
 				if (consulIndex) {
 					uri += `&index=${consulIndex}`;
 				}
@@ -119,11 +119,13 @@ export default async function initializeConfiguration({consulHost, service, pref
 
 	consulHost = consulHost || process.env.CONSUL_HOST || props.defaultHost;
 
+	const prefixUri = prefix ? `${prefix.split('/').map(encodePathSegment).join('/')}/` : '';
+	const keyPath = `${prefixUri}${encodePathSegment(service.name || process.env.SERVICE_NAME)}`;
 	const identifier = await fetchIdentifier(service, consulHost);
 
 	let liveProperties = {};
 
-	const updater = configUpdater(consulHost, prefix, identifier, (newProperties) => {
+	const updater = configUpdater(consulHost, prefix, identifier, keyPath, (newProperties) => {
 		updateConfig(liveProperties, newProperties, callbacks);
 	});
 
