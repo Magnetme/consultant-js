@@ -23,6 +23,5 @@ export default async function health({ service, consulHost }) {
 	if (result.ok) {
 		return result.json();
 	}
-	const body = result.text();
-	throw new ConsultantError(`Could not get health for ${service}: ${body} (status ${result.status})`);
+	throw new ConsultantError(`Could not get health for ${service} (status ${result.status})`);
 }
