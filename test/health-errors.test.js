@@ -2,6 +2,7 @@
 
 const assert = require('node:assert/strict');
 const {execFile} = require('node:child_process');
+const {randomBytes} = require('node:crypto');
 const http = require('node:http');
 const {describe, it} = require('node:test');
 const {gzipSync} = require('node:zlib');
@@ -10,8 +11,18 @@ const {gzipSync} = require('node:zlib');
 // hide an unhandled rejection. The caller handles only the public health promise.
 const client = `
 const assert = require('node:assert/strict');
-const {health} = require(process.argv[1]);
 const expected = process.argv[3];
+let drained;
+if (expected === 'drained-status') {
+	// Observe the real response without consuming it on the client's behalf.
+	const fetchPath = require.resolve('node-fetch', {paths: [process.argv[1]]});
+	const fetch = require(fetchPath);
+	require.cache[fetchPath].exports = (...args) => fetch(...args).then(response => {
+		drained = new Promise(resolve => response.body.once('end', resolve));
+		return response;
+	});
+}
+const {health} = require(process.argv[1]);
 async function main() {
 	try {
 		const value = await health({consulHost: process.argv[2], service: 'api'});
@@ -21,7 +32,7 @@ async function main() {
 	}
 	catch (error) {
 		if (expected === 'success') throw error;
-		if (expected === 'status') {
+		if (expected === 'status' || expected === 'drained-status') {
 			assert.equal(error.name, 'ConsultantError');
 			assert.match(error.message, /status (403|500)/);
 			assert.equal(error.message.includes('synthetic rejection'), false);
@@ -31,6 +42,7 @@ async function main() {
 		}
 		console.log('caller caught health rejection: ' + error.name);
 	}
+	if (expected === 'drained-status') await drained;
 	// Let deferred stream/decompression failures surface under Node's defaults.
 	setTimeout(() => console.log('caller remained alive'), 100);
 }
@@ -87,6 +99,11 @@ describe('health response body failures stay inside the caller promise', () => {
 		it(`allows a caller to catch a normal 403 ${encoding || 'plain'} response`, async test => {
 			const body = 'synthetic rejection';
 			await runHealth(test, {status : 403, encoding, body : encoding ? gzipSync(body) : body, expected : 'status'});
+		});
+		it(`releases the connection after a large 500 ${encoding || 'plain'} response`, async test => {
+			// Exceed both stream and socket buffers, even after compression.
+			const body = randomBytes(8 * 1024 * 1024);
+			await runHealth(test, {status : 500, encoding, body : encoding ? gzipSync(body) : body, expected : 'drained-status'});
 		});
 	}
 	for (const status of [403, 500]) {
