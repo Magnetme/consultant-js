@@ -20,7 +20,10 @@ async function startConsul(test, handler) {
 		handler(request, response);
 	});
 	await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-	test.after(() => new Promise(resolve => server.close(resolve)));
+	test.after(() => new Promise(resolve => {
+		server.close(resolve);
+		server.closeAllConnections();
+	}));
 	return {consulHost : `http://127.0.0.1:${server.address().port}`, requests};
 }
 
@@ -31,6 +34,41 @@ async function loadConfig(test, consulHost) {
 }
 
 describe('configuration warning confidentiality', () => {
+	for (const status of [403, 404, 500]) {
+		it(`closes a streaming HTTP ${status} response without logging its body`, async test => {
+			const warnings = [];
+			test.mock.method(console, 'warn', (...args) => warnings.push(args.join(' ')));
+			let onClose;
+			const responseClosed = new Promise(resolve => { onClose = resolve; });
+			const fixture = await startConsul(test, (request, response) => {
+				response.on('close', () => onClose(true));
+				response.writeHead(status);
+				const chunk = 'synthetic-upstream-password-06'.repeat(8192);
+				let chunksRemaining = 64;
+				const writeChunks = () => {
+					while (chunksRemaining > 0) {
+						chunksRemaining -= 1;
+						if (!response.write(chunk)) {
+							response.once('drain', writeChunks);
+							return;
+						}
+					}
+					response.end();
+				};
+				writeChunks();
+			});
+			const configuration = await loadConfig(test, fixture.consulHost);
+			configuration.stop();
+			let timeout;
+			const deadline = new Promise(resolve => { timeout = setTimeout(() => resolve(false), 1000); });
+			test.after(() => clearTimeout(timeout));
+			assert.equal(await Promise.race([responseClosed, deadline]), true, 'rejected response connection should close');
+			assert.deepEqual(configuration.getProperties(), {});
+			assert.equal(warnings.length, 1);
+			assert.doesNotMatch(warnings[0], /synthetic-upstream-password-06/);
+		});
+	}
+
 	for (const status of [403, 500]) {
 		it(`keeps HTTP ${status} diagnostics without logging the response body`, async test => {
 			const warnings = [];

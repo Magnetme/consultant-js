@@ -27,12 +27,14 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 
 				consulIndex = response.headers['x-consul-index'];
 				if (response.status === 404) {
+					response.body.resume();
 					timeout = 5000;
 					const prefixText = prefix ? ` with prefix '${prefix}'` : '';
 					console.warn(`'${service.name}'${prefixText} cannot be found in Consul`);
 					return;
 				}
 				if (response.status !== 200) {
+					response.body.resume();
 					timeout = 60000;
 					console.warn(`Error retrieving data from Consul: HTTP ${response.status}`);
 					return;
