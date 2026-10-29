@@ -23,6 +23,8 @@ export default async function health({ service, consulHost }) {
 	if (result.ok) {
 		return result.json();
 	}
-	const body = result.text();
-	throw new ConsultantError(`Could not get health for ${service}: ${body} (status ${result.status})`);
+	// Drain error responses so unread bodies do not hold the connection open.
+	// node-fetch handles stream errors; avoid creating an unused body promise.
+	result.body.resume();
+	throw new ConsultantError(`Could not get health for ${service} (status ${result.status})`);
 }
