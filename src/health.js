@@ -2,10 +2,11 @@ import fetch from 'node-fetch';
 import props from './properties';
 import properties from './properties';
 import ConsultantError from './consultant-error';
+import encodePathSegment from './path-segment';
 
 export default async function health({ service, consulHost }) {
 	consulHost = consulHost || process.env.CONSUL_HOST || props.defaultHost;
-	const uri = `${consulHost}/v1/health/service/${service}?near=_agent&passing=true`;
+	const uri = `${consulHost}/v1/health/service/${encodePathSegment(service)}?near=_agent&passing=true`;
 
 	let result;
 	try {
