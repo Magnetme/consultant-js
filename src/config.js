@@ -40,6 +40,9 @@ const configUpdater = (consulHost, prefix, service, callback) => {
 					return;
 				}
 				const json = await response.json();
+				if (shutdown) {
+					return;
+				}
 				const properties = parseBody(json, prefix, service);
 				if (callback) {
 					callback(properties);
