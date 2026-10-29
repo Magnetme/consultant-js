@@ -12,11 +12,15 @@ const deregister = async (host, instance) => {
 		}
 	};
 
+	let response;
 	try {
-		await fetch(uri, opts);
+		response = await fetch(uri, opts);
 	}
 	catch (e) {
 		throw new ConsultantError(`Could not deregister from Consul: ${e}`);
+	}
+	if (!response.ok) {
+		throw new ConsultantError(`Could not deregister from Consul (status ${response.status})`);
 	}
 };
 
@@ -61,11 +65,15 @@ export default async function register({service, healthCheckPath, healthCheckInt
 		body : JSON.stringify(body)
 	};
 
+	let response;
 	try {
-		await fetch(url, opts);
+		response = await fetch(url, opts);
 	}
 	catch (e) {
 		throw new ConsultantError('Could not register service with Consul', e);
+	}
+	if (!response.ok) {
+		throw new ConsultantError(`Could not register service with Consul (status ${response.status})`);
 	}
 
 	return {
