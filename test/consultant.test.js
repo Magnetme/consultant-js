@@ -50,11 +50,13 @@ describe('configuration', () => {
 			const values = configRequest === 1
 				? [
 					{Key : 'apps/api/message', Value : encode('hello')},
+					{Key : 'apps/api/oauth.client.scopes', Value : null},
 					{Key : 'apps/api/remove-me', Value : encode('temporary')},
 					{Key : 'apps/other/ignored', Value : encode('not for api')}
 				]
 				: [
 					{Key : 'apps/api/message', Value : encode('updated')},
+					{Key : 'apps/api/oauth.client.scopes', Value : encode('users:view')},
 					{Key : 'apps/api/added', Value : encode('new')}
 				];
 			sendJson(response, values);
@@ -69,6 +71,7 @@ describe('configuration', () => {
 
 		assert.deepEqual(configuration.getProperties(), {
 			message : 'hello',
+			'oauth.client.scopes' : '',
 			'remove-me' : 'temporary'
 		});
 
@@ -80,7 +83,11 @@ describe('configuration', () => {
 			});
 		});
 
-		assert.deepEqual(updatedProperties, {message : 'updated', added : 'new'});
+		assert.deepEqual(updatedProperties, {
+			message : 'updated',
+			'oauth.client.scopes' : 'users:view',
+			added : 'new'
+		});
 		assert.deepEqual(configuration.getProperties(), updatedProperties);
 	});
 });
