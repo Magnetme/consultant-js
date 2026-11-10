@@ -96,7 +96,7 @@ function parseBody(body, prefix, service) {
 	})
 		.filter(kvPair => kvPair.key.key && keyApplies(kvPair.key, service))
 		.map(kvPair => {
-			return {[kvPair.key.key] : atob(kvPair.value)};
+			return {[kvPair.key.key] : kvPair.value === null ? '' : atob(kvPair.value)};
 		})
 		.reduce((properties, kvPair) => copyProperties(properties, kvPair), {});
 }
